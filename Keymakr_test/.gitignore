@@ -1,0 +1,6 @@
+.venv
+.idea
+__pycache__
+posts.sqlite3
+task.sqlite3
+task_manager.log
