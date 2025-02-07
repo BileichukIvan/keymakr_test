@@ -4,7 +4,7 @@ This repository contains the implementation of four test tasks along with additi
 Tasks list:
 - **Task 1:** Working with APIs and Multithreading
 Write a script that fetches data from an API (e.g., JSONPlaceholder) in parallel and saves it to an SQLite database.
-  - Fetched data are stored in posts.sqlite3 file
+  - Fetched data are stored in posts.sqlite3 and posts.csv files
 
 
 - **Task 2:** File Processing and XML/JSON Conversion
@@ -30,7 +30,7 @@ Develop a simple task management system using Python and lite db. How to Use:
     - List tasks: ```python task_4.py --list```
 
     All logs are stored in the **task_manager.log** file. Also, all data is stored inside **task.sqlite3** file
-# Instalation
+# Installation
 
 - **Clone the repository**
 ```bash
