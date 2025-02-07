@@ -1,10 +1,16 @@
 import re
 import sys
+import logging
 from collections import Counter
 
 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+
 def parse_log_line(line: str) -> dict[str, str] | None:
-    """Розбирає рядок з логами на його складові"""
+    """Split log line into groups and return a dictionary with the groups."""
     log_pattern = re.compile(
         r'(?P<ip>\d+\.\d+\.\d+\.\d+) - - \[.*\] "\w+ (?P<url>\S+) .*" (?P<status>\d{3}) (?P<size>\d+)'
     )
@@ -13,33 +19,55 @@ def parse_log_line(line: str) -> dict[str, str] | None:
 
 
 def analyze_log(file_path: str) -> None:
-    """"Аналізує лог файл"""
+    """Analyst log file"""
     ip_counter = Counter()
-    error_counter = Counter()
+    client_error_counter = Counter()
+    server_error_counter = Counter()
     total_size = 0
     count = 0
 
-    with open(file_path, "r") as file:
-        for line in file:
-            data = parse_log_line(line)
-            if data:
-                ip_counter[data["ip"]] += 1
-                status_code = int(data["status"])
-                if 400 <= status_code < 500:
-                    error_counter[status_code] += 1
-                    total_size += int(data["size"])
-                    count += 1
+    try:
+        logging.info(f"Opening log file: {file_path}")
+        with open(file_path, "r", encoding="utf-8") as file:
+            for line in file:
+                data = parse_log_line(line)
+                if data:
+                    ip_counter[data["ip"]] += 1
+                    status_code = int(data["status"])
 
-    print("Top 5 IP addresses with most requests:\n")
+                    if data["size"] != "-" and data["size"].isdigit():
+                        total_size += int(data["size"])
+                        count += 1
+                    else:
+                        logging.warning(f"Invalid size value: {data['size']}")
+
+                    if 400 <= status_code < 500:
+                        client_error_counter[status_code] += 1
+                    elif 500 <= status_code < 600:
+                        server_error_counter[status_code] += 1
+
+        logging.info("Successfully processed the log file.")
+    except OSError as e:
+        logging.error(f"Error opening the log file '{file_path}': {e}")
+        return None
+
+    logging.info("Calculating top 5 IP addresses with the most requests.")
     for ip, freq in ip_counter.most_common(5):
         print(f"{ip}: {freq} requests\n")
+        logging.debug(f"IP: {ip}, Requests: {freq}")
 
-    print(f"Most frequent error codes:\n")
-    for status, freq in error_counter.most_common(5):
+    logging.info("Calculating most frequent client error codes (4xx).")
+    for status, freq in client_error_counter.most_common(5):
         print(f"{status}: {freq} times\n")
+        logging.debug(f"Client Error Code: {status}, Frequency: {freq}")
+
+    logging.info("Calculating most frequent server error codes (5xx).")
+    for status, freq in server_error_counter.most_common(5):
+        print(f"{status}: {freq} times\n")
+        logging.debug(f"Server Error Code: {status}, Frequency: {freq}")
 
     avg_size = total_size / count if count > 0 else 0
-    print(f"Average size of responses is: {avg_size:.2f} bytes")
+    logging.info(f"Average size of responses calculated: {avg_size:.2f} bytes")
 
 
 if __name__ == "__main__":
